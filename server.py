@@ -37,6 +37,8 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         presentDate = datetime.now()
         unix_timestamp = datetime.timestamp(presentDate)*1000
 
+        print(unix_timestamp)
+
         resp = requests.get(url=FF_CAL)
         ff_cal = list(resp.json())
         ff_cal = list(filter(lambda x: x["impact"] == "High" or x["impact"] == "Medium", ff_cal))
@@ -53,15 +55,16 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         ical = "" 
 
-        item_id = int(unix_timestamp)
+        cnt = 0 
         for item in ff_cal:
             c = item.copy()
-            item_id = item_id + 1
-            c["uid"] = str(item_id)
-            parsed_date = parse(c["date"]) + timedelta(hours=-3)            
-            c["date"] = (parsed_date.isoformat() + "Z").replace("-04:00Z","").replace("-","").replace(":","")
+            parsed_date = parse(c["date"]) + timedelta(hours=-3)
+            c["uid"] = (parsed_date.weekday() * 100) + cnt
+            cnt = cnt + 1
+            c["date"] = (parsed_date.isoformat() + "Z").replace("-05:00Z","").replace("-","").replace(":","")
             ical = ical + ICAL_TEMPLATE.format(**c)
        
+        print(ical)
         ical_response = ICAL.format(items=ical)
 
         # Writing the HTML contents with UTF-8
